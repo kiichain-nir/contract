@@ -1,12 +1,22 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 import "./ProjectToken.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 contract ProjectManager {
+
+    using EnumerableSet for EnumerableSet.AddressSet;
+    // Declare a set state variable
+    EnumerableSet.AddressSet private vendorAddress;
 
     struct Beneficiary {
         address walletAddress;
         uint64 amount;
+    }
+
+    struct Vendor{
+        address vendorAddress;
+        uint256 tokenBalance;
     }
 
     // Project is uniquely identified by tokenAddress of the project's token
@@ -19,6 +29,7 @@ contract ProjectManager {
     }
 
     Project[] public projects;
+
 
     mapping(address =>uint256) projectToken;
 
@@ -56,6 +67,11 @@ contract ProjectManager {
         }));
     }
 
+    function addVendor(address _vendorAddress ) external {
+        vendorAddress.add(_vendorAddress);
+
+    }
+
     function getProject(uint256 index) external view returns (string memory, string memory, address) {
         require(index < projects.length, "Project does not exist");
         Project storage project = projects[index];
@@ -71,5 +87,9 @@ contract ProjectManager {
           return benDetails;
     }
 
+    function getVendors() external view  returns(address[] memory vendor){
+        return vendorAddress.values();
+
+    } 
     
 }
