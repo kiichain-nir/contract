@@ -11,12 +11,7 @@ contract ProjectManager {
 
     struct Beneficiary {
         address walletAddress;
-        uint64 amount;
-    }
-
-    struct Vendor{
-        address vendorAddress;
-        uint256 tokenBalance;
+        uint256 amount;
     }
 
     // Project is uniquely identified by tokenAddress of the project's token
@@ -26,6 +21,8 @@ contract ProjectManager {
         string tokenName;
         address tokenAddress;
         Beneficiary[] beneficiaries;
+        address[] vendor;
+
     }
 
     Project[] public projects;
@@ -36,6 +33,10 @@ contract ProjectManager {
     event ProjectCreated(string name, string symbol, address tokenAddress);
 
     event BeneficiaryAdded(address indexed tokenAddress,address  indexed benAddress,uint256 amount);
+
+    event VendorAdded(address indexed vendorAddress, uint256 indexed project);
+
+    event TransferToVendor(address indexed vendorAddress,address indexed ben,uint256 amount);
 
     function createProject(string memory name, string memory tokenName, string memory symbol) external returns(uint256 length){
         ProjectToken token = new ProjectToken(tokenName, symbol);
@@ -65,10 +66,15 @@ contract ProjectManager {
             walletAddress:walletAddress,
             amount:amount
         }));
+        ProjectToken(tokenAddress).transfer(walletAddress,amount);
+        emit BeneficiaryAdded(tokenAddress, walletAddress, amount);
     }
 
-    function addVendor(address _vendorAddress ) external {
+    function addVendor(address _vendorAddress,address tokenAddress ) external {
+        uint256 projectId = projectToken[tokenAddress];
+        projects[projectId].vendor.push(_vendorAddress);
         vendorAddress.add(_vendorAddress);
+        emit VendorAdded(_vendorAddress,projectId);
 
     }
 
@@ -76,6 +82,27 @@ contract ProjectManager {
         require(index < projects.length, "Project does not exist");
         Project storage project = projects[index];
         return (project.name, project.tokenSymbol, project.tokenAddress);
+    }
+
+    function transferToVendor(address _vendorAddress,address _tokenAddress, uint256 _amount) external {
+        uint256 projectId = projectToken[_tokenAddress];
+        updateBenAmount(msg.sender, _amount, projectId);
+        ProjectToken(_tokenAddress).transferFrom(msg.sender,_vendorAddress,_amount);
+        emit TransferToVendor(_vendorAddress, msg.sender, _amount);
+    }
+
+    function updateBenAmount(address _ben, uint256 _amount, uint256 _projectId) private {
+        Project storage project = projects[_projectId];
+
+        for (uint256 i = 0; i < project.beneficiaries.length; i++) {
+        if (project.beneficiaries[i].walletAddress == _ben) {
+            project.beneficiaries[i].amount = project.beneficiaries[i].amount- _amount;
+            return;
+        }
+    }
+    
+    revert("Beneficiary not found");
+
     }
 
     function getAllProjects() external view returns (Project[] memory) {
@@ -91,5 +118,9 @@ contract ProjectManager {
         return vendorAddress.values();
 
     } 
+
+    function getProjectVendor(uint256 projectId) external view returns(address[] memory vendors){
+        return projects[projectId].vendor;
+    }
     
 }
