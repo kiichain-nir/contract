@@ -20,7 +20,7 @@ contract ProjectManager {
         string tokenSymbol;
         string tokenName;
         address tokenAddress;
-        Beneficiary[] beneficiaries;
+        address[] beneficiaries;
         address[] vendor;
 
     }
@@ -62,10 +62,7 @@ contract ProjectManager {
         uint256 projectId = projectToken[tokenAddress];
         require(projectLength > 0,"Project not created");
         Project storage project = projects[projectId];
-        project.beneficiaries.push(Beneficiary({
-            walletAddress:walletAddress,
-            amount:amount
-        }));
+        project.beneficiaries.push(walletAddress);
         ProjectToken(tokenAddress).transfer(walletAddress,amount);
         emit BeneficiaryAdded(tokenAddress, walletAddress, amount);
     }
@@ -84,34 +81,34 @@ contract ProjectManager {
         return (project.name, project.tokenSymbol, project.tokenAddress);
     }
 
-    function transferToVendor(address _vendorAddress,address _tokenAddress, uint256 _amount) external {
-        uint256 projectId = projectToken[_tokenAddress];
-        updateBenAmount(msg.sender, _amount, projectId);
-        ProjectToken(_tokenAddress).transferFrom(msg.sender,_vendorAddress,_amount);
-        emit TransferToVendor(_vendorAddress, msg.sender, _amount);
-    }
+    // function transferToVendor(address _vendorAddress,address _tokenAddress, uint256 _amount) external {
+    //     uint256 projectId = projectToken[_tokenAddress];
+    //     // updateBenAmount(msg.sender, _amount, projectId);
+    //     ProjectToken(_tokenAddress).transferFrom(msg.sender,_vendorAddress,_amount);
+    //     emit TransferToVendor(_vendorAddress, msg.sender, _amount);
+    // }
 
-    function updateBenAmount(address _ben, uint256 _amount, uint256 _projectId) private {
-        Project storage project = projects[_projectId];
+    // function updateBenAmount(address _ben, uint256 _amount, uint256 _projectId) private {
+    //     Project storage project = projects[_projectId];
 
-        for (uint256 i = 0; i < project.beneficiaries.length; i++) {
-        if (project.beneficiaries[i].walletAddress == _ben) {
-            project.beneficiaries[i].amount = project.beneficiaries[i].amount- _amount;
-            return;
-        }
-    }
+    //     for (uint256 i = 0; i < project.beneficiaries.length; i++) {
+    //     if (project.beneficiaries == _ben) {
+    //         project.beneficiaries[i].amount = project.beneficiaries[i].amount- _amount;
+    //         return;
+    //     }
+    // }
     
-    revert("Beneficiary not found");
+    // revert("Beneficiary not found");
 
-    }
+    // }
 
     function getAllProjects() external view returns (Project[] memory) {
         return projects;
     }
 
-    function getBeneficiaries(uint256 projectIndex) external view returns(Beneficiary[] memory benDetails){
-          benDetails = projects[projectIndex].beneficiaries;
-          return benDetails;
+    function getBeneficiaries(uint256 projectIndex) external view returns(address[] memory benAddress){
+          benAddress = projects[projectIndex].beneficiaries;
+          return benAddress;
     }
 
     function getVendors() external view  returns(address[] memory vendor){
