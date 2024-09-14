@@ -2,8 +2,10 @@
 pragma solidity ^0.8.24;
 import "./ProjectToken.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/Multicall.sol";
 
-contract ProjectManager {
+
+contract ProjectManager is Multicall {
 
     using EnumerableSet for EnumerableSet.AddressSet;
     // Declare a set state variable
@@ -30,30 +32,30 @@ contract ProjectManager {
 
     mapping(address =>uint256) projectToken;
 
-    event ProjectCreated(string name, string symbol, address tokenAddress);
+    event ProjectCreated(string name, string symbol, address indexed tokenAddress, uint256 indexed projectId);
 
-    event BeneficiaryAdded(address indexed tokenAddress,address  indexed benAddress,uint256 amount);
+    event BeneficiaryAdded(address indexed tokenAddress,address  indexed benAddress,uint256 indexed projectId, uint256 amount);
 
     event VendorAdded(address indexed vendorAddress, uint256 indexed project);
 
     event TransferToVendor(address indexed vendorAddress,address indexed ben,uint256 amount);
 
-    function createProject(string memory name, string memory tokenName, string memory symbol) external returns(uint256 length){
+    function createProject(string memory name, string memory tokenName, string memory symbol, uint256 amount) external returns(address tokenAddress) {
         ProjectToken token = new ProjectToken(tokenName, symbol);
         uint256 index = projects.length ;
 
-        token.mint(address(this), 100000 * 10);
-       address tokenAddress = address(token);
-       projects.push();
+        token.mint(address(this), amount);
+        tokenAddress = address(token);
+        projects.push();
         Project storage project = projects[index];
         project.name =name;
         project.tokenSymbol = symbol;
         project.tokenName = tokenName;
         project.tokenAddress = tokenAddress;
 
-        emit ProjectCreated(name, symbol, address(token));
+        emit ProjectCreated(name, symbol, address(token), index);
 
-        return index;
+        return tokenAddress;
     }
 
     function addBeneficiary(address tokenAddress, address walletAddress, uint64 amount) external {
@@ -64,7 +66,7 @@ contract ProjectManager {
         Project storage project = projects[projectId];
         project.beneficiaries.push(walletAddress);
         ProjectToken(tokenAddress).transfer(walletAddress,amount);
-        emit BeneficiaryAdded(tokenAddress, walletAddress, amount);
+        emit BeneficiaryAdded(tokenAddress, walletAddress, projectId,amount);
     }
 
     function addVendor(address _vendorAddress,address tokenAddress ) external {
@@ -75,10 +77,14 @@ contract ProjectManager {
 
     }
 
-    function getProject(uint256 index) external view returns (string memory, string memory, address) {
+    function getProject(uint256 index) external view returns (string memory, string memory) {
         require(index < projects.length, "Project does not exist");
         Project storage project = projects[index];
-        return (project.name, project.tokenSymbol, project.tokenAddress);
+        return (project.name, project.tokenSymbol);
+    }
+
+    function getProjectBalance(address tokenAddress) external view returns(uint256 balance){
+        return ProjectToken(tokenAddress).balanceOf(address(this));
     }
 
     // function transferToVendor(address _vendorAddress,address _tokenAddress, uint256 _amount) external {

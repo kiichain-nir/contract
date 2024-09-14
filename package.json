@@ -1,7 +1,7 @@
 {
-  "name": "hedera-contracts",
+  "name": "kiichain-contracts",
   "version": "1.0.0",
-  "description": "Smart contracts for hedera blockchain",
+  "description": "Smart contracts for kiichain blockchain",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
